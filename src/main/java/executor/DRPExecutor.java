@@ -2,17 +2,21 @@ package executor;
 
 import static dagger.DRPModule.BILL_OF_DISTRIBUTION_PROVIDER;
 import static dagger.DRPModule.ON_HAND_INVENTORY_PROVIDER;
+import static dagger.DRPModule.SINGLE_NODE_SHORTEST_PATH_BASED_PLANNER;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 
 import dagger.DaggerDRPComponent;
 import model.BillOfDistribution;
+import model.Demand;
 import model.OnHandInventory;
+import planner.ResourcePlanner;
 import provider.CustomerDemandProvider;
 import provider.FileInputProvider;
 
@@ -32,14 +36,33 @@ public class DRPExecutor {
     @Inject
     CustomerDemandProvider customerDemandProvider;
 
+    @Inject
+    @Named(SINGLE_NODE_SHORTEST_PATH_BASED_PLANNER)
+    ResourcePlanner resourcePlanner;
+
     public DRPExecutor() {
         DaggerDRPComponent.create().inject(this);
     }
 
+    /*
+    Executor will do following:
+    * Collect input files and load bill of distribution, on hand inventory & customer demand
+    * Pass the input to Resource Planner
+    * Save the output files
+     */
     public void execute() {
-        log.info(billOfDistributionProvider.provide(getFile(Paths.get("/Volumes/workplace/DRP2/src/main/resources/bill_of_distribution.csv"))));
-        log.info(onHandInventoryProvider.provide(getFile(Paths.get("/Volumes/workplace/DRP2/src/main/resources/on_hand_inventory.csv"))));
-        log.info(customerDemandProvider.provide(getFile(Paths.get("/Volumes/workplace/DRP2/src/main/resources/customer_demand.csv"))));
+        Path billOfDistributionFilePath = Paths.get("/Volumes/workplace/DRP2/src/main/resources/bill_of_distribution.csv");
+        Path onHandInventoryFilePath = Paths.get("/Volumes/workplace/DRP2/src/main/resources/on_hand_inventory.csv");
+        Path customerDemandFilePath = Paths.get("/Volumes/workplace/DRP2/src/main/resources/customer_demand.csv");
+        List<BillOfDistribution> distributionBills = billOfDistributionProvider.provide(getFile(billOfDistributionFilePath));
+        List<OnHandInventory> onHandInventories = onHandInventoryProvider.provide(getFile(onHandInventoryFilePath));
+        List<Demand> customerDemand = customerDemandProvider.provide(getFile(customerDemandFilePath));
+        log.info(distributionBills);
+        log.info(onHandInventories);
+        log.info(customerDemand);
+
+        resourcePlanner.plan(distributionBills, onHandInventories, customerDemand);
+
     }
 
     private File getFile(Path path) {

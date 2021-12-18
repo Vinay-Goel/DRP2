@@ -1,20 +1,16 @@
 package model;
 
-import java.util.Map;
-
 import constants.FileHeaders;
 
 import com.univocity.parsers.annotations.Parsed;
 import com.univocity.parsers.annotations.Trim;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Builder
 public class Demand {
 
     @Parsed(field = FileHeaders.LOCATION)
@@ -25,7 +21,7 @@ public class Demand {
     @Parsed(field = FileHeaders.DAY)
     @NonNull
     @Trim
-    private String day;
+    private Integer day;
 
     @Parsed(field = FileHeaders.DEMAND)
     @NonNull

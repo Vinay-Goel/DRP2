@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import constants.PlannerConstants;
 import model.Demand;
 import org.apache.commons.lang3.StringUtils;
 
@@ -48,15 +49,30 @@ public class CustomerDemandProvider {
                 .collect(Collectors.toList());
     }
 
-    public List<Demand> convertCustomerDemandRow(String[] customerDemandRow, String[] headers) {
+    private List<Demand> convertCustomerDemandRow(String[] customerDemandRow, String[] headers) {
         List<Demand> customerDemand = new ArrayList<>();
         for (int i = 1; i < customerDemandRow.length; i++) {
             if (StringUtils.isNotBlank(customerDemandRow[i])) {
                 Integer demandValue = Integer.parseInt(customerDemandRow[i]);
-                Demand demand = new Demand(customerDemandRow[0], headers[i], demandValue);
+                Integer dayValue = getDayValue(headers[i]);
+                Demand demand = Demand.builder()
+                        .location(customerDemandRow[0])
+                        .day(dayValue)
+                        .demand(demandValue)
+                        .build();
                 customerDemand.add(demand);
             }
         }
         return customerDemand;
+    }
+
+    private Integer getDayValue(String day) {
+        String dayValue = StringUtils.removeStartIgnoreCase(day, PlannerConstants.DEMAND_DAY_PREFIX).trim();
+        if (StringUtils.isNumeric(dayValue)) {
+            return Integer.valueOf(dayValue);
+        } else {
+            String errorMessage = String.format("Invalid Day: [%s] in Customer Demand", day);
+            throw new RuntimeException(errorMessage);
+        }
     }
 }
