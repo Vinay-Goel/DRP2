@@ -49,12 +49,10 @@ public class DRPExecutor {
         log.info("On Hand Inventory: [{}]", onHandInventories);
         log.info("Customer Demand: [{}]", customerDemand);
 
-        String outputPrefix = Instant.now().toString();
-        Path shortestPathOutputLoc = Paths.get(outputDir.toString(),  outputPrefix.concat(PlannerConstants.SHORTEST_PATH_OUTPUT_FILE));
-        Path dispatchedInventoryOutputLoc = Paths.get(outputDir.toString(),
-                outputPrefix.concat(PlannerConstants.DISPATCHED_INVENTORY_OUTPUT_FILE));
-        createOutputDirectory(shortestPathOutputLoc);
-        createOutputDirectory(dispatchedInventoryOutputLoc);
+        Path subDir = Paths.get(outputDir.toString(), Instant.now().toString());
+        createOutputDirectory(subDir);
+        Path shortestPathOutputLoc = Paths.get(subDir.toString(),  PlannerConstants.SHORTEST_PATH_OUTPUT_FILE);
+        Path dispatchedInventoryOutputLoc = Paths.get(subDir.toString(), PlannerConstants.DISPATCHED_INVENTORY_OUTPUT_FILE);
 
         Network network = resourcePlanner.plan(distributionBills, onHandInventories, customerDemand);
         network.getShortestPathStore().write(shortestPathOutputLoc);
