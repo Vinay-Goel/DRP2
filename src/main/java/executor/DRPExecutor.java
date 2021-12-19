@@ -6,7 +6,6 @@ import static dagger.DRPModule.SINGLE_NODE_SHORTEST_PATH_BASED_PLANNER;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -50,10 +49,8 @@ public class DRPExecutor {
     * Pass the input to Resource Planner
     * Save the output files
      */
-    public void execute() {
-        Path billOfDistributionFilePath = Paths.get("/Volumes/workplace/DRP2/src/main/resources/bill_of_distribution.csv");
-        Path onHandInventoryFilePath = Paths.get("/Volumes/workplace/DRP2/src/main/resources/on_hand_inventory.csv");
-        Path customerDemandFilePath = Paths.get("/Volumes/workplace/DRP2/src/main/resources/customer_demand.csv");
+    public void execute(Path billOfDistributionFilePath, Path onHandInventoryFilePath, Path customerDemandFilePath, Path outputDir) {
+
         List<BillOfDistribution> distributionBills = billOfDistributionProvider.provide(getFile(billOfDistributionFilePath));
         List<OnHandInventory> onHandInventories = onHandInventoryProvider.provide(getFile(onHandInventoryFilePath));
         List<Demand> customerDemand = customerDemandProvider.provide(getFile(customerDemandFilePath));
@@ -62,7 +59,6 @@ public class DRPExecutor {
         log.info(customerDemand);
 
         resourcePlanner.plan(distributionBills, onHandInventories, customerDemand);
-
     }
 
     private File getFile(Path path) {

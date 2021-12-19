@@ -18,7 +18,7 @@ public abstract class ResourcePlanner {
     1. Lowest Freight Cost
     2. Minimum Lead Time
      */
-    public void plan(List<BillOfDistribution> distributionBills, List<OnHandInventory> inventories, List<Demand> customerDemand) {
+    public Network plan(List<BillOfDistribution> distributionBills, List<OnHandInventory> inventories, List<Demand> customerDemand) {
         Network network = new Network(distributionBills, inventories);
 
         for (Demand demand: customerDemand) {
@@ -29,6 +29,7 @@ public abstract class ResourcePlanner {
                 log.error(e);
             }
         }
+        return network;
     }
 
     abstract NextInPath getShortestPath(Demand demand, Network network);

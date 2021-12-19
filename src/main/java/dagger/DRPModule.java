@@ -7,6 +7,9 @@ import planner.ResourcePlanner;
 import planner.SingleNodeShortestPathPlanner;
 import provider.FileInputProvider;
 import model.BillOfDistribution;
+import sample.SampleBillOfDistributionGenerator;
+import sample.SampleDemandGenerator;
+import sample.SampleInventoryGenerator;
 
 import com.univocity.parsers.common.processor.BeanListProcessor;
 
@@ -34,5 +37,20 @@ public class DRPModule {
     @Named(SINGLE_NODE_SHORTEST_PATH_BASED_PLANNER)
     public static ResourcePlanner provideSingleNodeShortestPathResourcePlanner() {
         return new SingleNodeShortestPathPlanner();
+    }
+
+    @Provides
+    public static SampleBillOfDistributionGenerator provideSampleBillOfDistributionGenerator() {
+        return new SampleBillOfDistributionGenerator(4, 20, 1500, 15000, 2, 250);
+    }
+
+    @Provides
+    public static SampleInventoryGenerator provideSampleInventoryGenerator() {
+        return new SampleInventoryGenerator(1500, 5000, 500);
+    }
+
+    @Provides
+    public static SampleDemandGenerator provideSampleDemandGenerator() {
+        return new SampleDemandGenerator(500, 10000, 100, 3);
     }
 }

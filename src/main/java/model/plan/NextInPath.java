@@ -13,6 +13,8 @@ public class NextInPath {
     private Integer leadTime;
     private Integer inventoryCollected;
     private Integer currentDay;
+
+    //Linked List from Source to Customer
     private NextInPath fromEdge;
 
     public int compare(NextInPath compareWith) {

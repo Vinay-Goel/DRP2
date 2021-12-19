@@ -21,6 +21,10 @@ public class InputStockConversion implements Conversion<String, String> {
     }
 
     @Override public String revert(final String stockString) {
-        return stockString;
+        if (StringUtils.equals(INFINITE_STOCK_VALUE.toString(), stockString)) {
+            return INFINITE_STOCK_STRING;
+        } else {
+            return stockString;
+        }
     }
 }
