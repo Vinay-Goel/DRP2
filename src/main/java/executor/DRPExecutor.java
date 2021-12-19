@@ -6,15 +6,18 @@ import static dagger.DRPModule.SINGLE_NODE_SHORTEST_PATH_BASED_PLANNER;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.List;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import dagger.DaggerDRPComponent;
+import constants.PlannerConstants;
 import model.BillOfDistribution;
 import model.Demand;
 import model.OnHandInventory;
+import network.Network;
 import planner.ResourcePlanner;
 import provider.CustomerDemandProvider;
 import provider.FileInputProvider;
@@ -24,44 +27,44 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class DRPExecutor {
 
-    @Inject
-    @Named(BILL_OF_DISTRIBUTION_PROVIDER)
-    FileInputProvider<BillOfDistribution> billOfDistributionProvider;
+    private final FileInputProvider<BillOfDistribution> billOfDistributionProvider;
+    private final FileInputProvider<OnHandInventory> onHandInventoryProvider;
+    private final CustomerDemandProvider customerDemandProvider;
+    private final ResourcePlanner resourcePlanner;
 
     @Inject
-    @Named(ON_HAND_INVENTORY_PROVIDER)
-    FileInputProvider<OnHandInventory> onHandInventoryProvider;
-
-    @Inject
-    CustomerDemandProvider customerDemandProvider;
-
-    @Inject
-    @Named(SINGLE_NODE_SHORTEST_PATH_BASED_PLANNER)
-    ResourcePlanner resourcePlanner;
-
-    public DRPExecutor() {
-        DaggerDRPComponent.create().inject(this);
+    public DRPExecutor(@Named(BILL_OF_DISTRIBUTION_PROVIDER)FileInputProvider<BillOfDistribution> billOfDistributionProvider,
+            @Named(ON_HAND_INVENTORY_PROVIDER) FileInputProvider<OnHandInventory> onHandInventoryProvider,
+            CustomerDemandProvider customerDemandProvider,
+            @Named(SINGLE_NODE_SHORTEST_PATH_BASED_PLANNER) ResourcePlanner resourcePlanner) {
+        this.billOfDistributionProvider = billOfDistributionProvider;
+        this.onHandInventoryProvider = onHandInventoryProvider;
+        this.customerDemandProvider = customerDemandProvider;
+        this.resourcePlanner = resourcePlanner;
     }
 
-    /*
-    Executor will do following:
-    * Collect input files and load bill of distribution, on hand inventory & customer demand
-    * Pass the input to Resource Planner
-    * Save the output files
-     */
-    public void execute(Path billOfDistributionFilePath, Path onHandInventoryFilePath, Path customerDemandFilePath, Path outputDir) {
+    public void executeDRP(List<BillOfDistribution> distributionBills, List<OnHandInventory> onHandInventories, List<Demand> customerDemand,
+            Path outputDir) {
+        log.info("Bill Of Distribution: [{}]", distributionBills);
+        log.info("On Hand Inventory: [{}]", onHandInventories);
+        log.info("Customer Demand: [{}]", customerDemand);
 
-        List<BillOfDistribution> distributionBills = billOfDistributionProvider.provide(getFile(billOfDistributionFilePath));
-        List<OnHandInventory> onHandInventories = onHandInventoryProvider.provide(getFile(onHandInventoryFilePath));
-        List<Demand> customerDemand = customerDemandProvider.provide(getFile(customerDemandFilePath));
-        log.info(distributionBills);
-        log.info(onHandInventories);
-        log.info(customerDemand);
+        String outputPrefix = Instant.now().toString();
+        Path shortestPathOutputLoc = Paths.get(outputDir.toString(),  outputPrefix.concat(PlannerConstants.SHORTEST_PATH_OUTPUT_FILE));
+        Path dispatchedInventoryOutputLoc = Paths.get(outputDir.toString(),
+                outputPrefix.concat(PlannerConstants.DISPATCHED_INVENTORY_OUTPUT_FILE));
+        createOutputDirectory(shortestPathOutputLoc);
+        createOutputDirectory(dispatchedInventoryOutputLoc);
 
-        resourcePlanner.plan(distributionBills, onHandInventories, customerDemand);
+        Network network = resourcePlanner.plan(distributionBills, onHandInventories, customerDemand);
+        network.getShortestPathStore().write(shortestPathOutputLoc);
+        network.getInventoryStore().write(dispatchedInventoryOutputLoc);
     }
 
-    private File getFile(Path path) {
-        return new File(path.toString());
+    private void createOutputDirectory(Path outputDir) {
+        log.info("Creating path: [{}]", outputDir.toString());
+        File directory = new File(outputDir.toString());
+        if (!directory.exists())
+            directory.mkdir();
     }
 }

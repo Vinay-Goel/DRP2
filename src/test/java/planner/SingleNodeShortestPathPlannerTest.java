@@ -6,7 +6,7 @@ import java.util.List;
 import model.BillOfDistribution;
 import model.Demand;
 import model.OnHandInventory;
-import model.network.Network;
+import network.Network;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

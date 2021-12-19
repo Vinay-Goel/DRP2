@@ -1,18 +1,15 @@
 package executor;
 
-import static dagger.DRPModule.SINGLE_NODE_SHORTEST_PATH_BASED_PLANNER;
-
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import dagger.DaggerDRPComponent;
 import model.BillOfDistribution;
 import model.Demand;
 import model.OnHandInventory;
-import planner.ResourcePlanner;
 import sample.SampleAttributeListGenerator;
 import sample.SampleBillOfDistributionGenerator;
 import sample.SampleDemandGenerator;
@@ -22,10 +19,6 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 public class DRPGeneratedInputExecutor {
-
-    @Inject
-    @Named(SINGLE_NODE_SHORTEST_PATH_BASED_PLANNER)
-    ResourcePlanner resourcePlanner;
 
     @Inject
     SampleBillOfDistributionGenerator sampleBillOfDistributionGenerator;
@@ -39,12 +32,15 @@ public class DRPGeneratedInputExecutor {
     @Inject
     SampleAttributeListGenerator sampleAttributeListGenerator;
 
+    @Inject
+    DRPExecutor drpExecutor;
+
     public DRPGeneratedInputExecutor() {
         DaggerDRPComponent.create().inject(this);
     }
 
     public void generateInputAndExecute(Integer numberOfFactories, List<String> intermediateNames, List<Integer> intermediateNumbers,
-            Integer numberOfCustomers) {
+            Integer numberOfCustomers, Path outputDir) {
 
         List<String> sources = sampleAttributeListGenerator.generate("Factory", numberOfFactories);
         List<List<String>> intermediates = new ArrayList<>();
@@ -59,6 +55,6 @@ public class DRPGeneratedInputExecutor {
         List<OnHandInventory> inventories = sampleInventoryGenerator.generate(sources, intermediates);
         List<Demand> demands = sampleDemandGenerator.generate(destinations);
 
-        resourcePlanner.plan(bills, inventories, demands);
+        drpExecutor.executeDRP(bills, inventories, demands, outputDir);
     }
 }

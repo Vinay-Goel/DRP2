@@ -5,7 +5,7 @@ import java.util.List;
 import model.BillOfDistribution;
 import model.Demand;
 import model.OnHandInventory;
-import model.network.Network;
+import network.Network;
 import model.plan.NextInPath;
 
 import lombok.extern.log4j.Log4j2;
@@ -23,8 +23,9 @@ public abstract class ResourcePlanner {
 
         for (Demand demand: customerDemand) {
             try {
+                log.info("Planning for demand: [{}]", demand);
                 NextInPath path = getShortestPath(demand, network);
-                network.execute(path);
+                network.executePath(demand, path);
             } catch (Exception e) {
                 log.error(e);
             }

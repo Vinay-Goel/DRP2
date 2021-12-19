@@ -8,11 +8,10 @@ import lombok.NonNull;
 @Builder
 public class NextInPath {
     @NonNull
-    private String location;
+    private String source;
     private Integer freightCost;
     private Integer leadTime;
     private Integer inventoryCollected;
-    private Integer currentDay;
 
     //Linked List from Source to Customer
     private NextInPath fromEdge;
@@ -20,7 +19,9 @@ public class NextInPath {
     public int compare(NextInPath compareWith) {
         if (freightCost.equals(compareWith.getFreightCost())) {
             if (leadTime.equals(compareWith.getLeadTime())) {
-                return location.compareTo(compareWith.getLocation());
+                if (inventoryCollected.equals(compareWith.getInventoryCollected()))
+                    return source.compareTo(compareWith.getSource());
+                return compareWith.getInventoryCollected().compareTo(inventoryCollected);
             }
             return leadTime.compareTo(compareWith.getLeadTime());
         }

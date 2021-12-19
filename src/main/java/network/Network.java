@@ -1,4 +1,4 @@
-package model.network;
+package network;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -6,16 +6,21 @@ import java.util.List;
 import java.util.Map;
 
 import model.BillOfDistribution;
+import model.Demand;
 import model.OnHandInventory;
 import model.plan.NextInPath;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
+import lombok.Getter;
+
+@Getter
 public class Network {
     private Multimap<String, NextInPath> graph;
     private Map<String, Integer> inventory;
-    private Map<String, Map<Integer, Integer>> locationDayInventoryUsed;
+    private InventoryStore inventoryStore;
+    private ShortestPathStore shortestPathStore;
 
     /**
     Network will hold the details of current network.
@@ -29,23 +34,22 @@ public class Network {
      **/
     public Network(List<BillOfDistribution> distributionBills, List<OnHandInventory> onHandInventories) {
         graph = ArrayListMultimap.create();
-        for (BillOfDistribution distributionBill: distributionBills) {
+        for (BillOfDistribution distributionBill: distributionBills)
             addEdge(distributionBill);
-        }
         inventory = new HashMap<>();
         for(OnHandInventory onHandInventory: onHandInventories) {
             inventory.put(onHandInventory.getLocation(), onHandInventory.getStock());
         }
-        locationDayInventoryUsed = new HashMap<>();
+        inventoryStore = new InventoryStore();
+        shortestPathStore = new ShortestPathStore();
     }
 
     private void addEdge(BillOfDistribution distributionBill) {
         NextInPath path = NextInPath.builder()
-                .location(distributionBill.getSource())
+                .source(distributionBill.getSource())
                 .freightCost(distributionBill.getFreightCost())
                 .leadTime(distributionBill.getLeadTimeDays())
                 .inventoryCollected(0)
-                .currentDay(0)
                 .build();
         graph.put(distributionBill.getDestination(), path);
     }
@@ -56,18 +60,16 @@ public class Network {
 
     public int getInventoryForDay(String location, Integer day) {
         int inv = inventory.getOrDefault(location, 0);
-        int invUsed = locationDayInventoryUsed.getOrDefault(location, new HashMap<>()).getOrDefault(day, 0);
-        return Integer.max(inv - invUsed, 0);
+        int usedInventory = inventoryStore.getLocationInventoryUsedForDay(location, day);
+        return Integer.max(inv - usedInventory, 0);
     }
 
-    public void execute(NextInPath path) {
-
-    }
-
-    private void useInventory(String location, Integer day, Integer inv) {
-        Map<Integer, Integer> dayInvUsed = locationDayInventoryUsed.getOrDefault(location, new HashMap<>());
-        int invUsed = dayInvUsed.getOrDefault(day, 0);
-        dayInvUsed.put(day, inv + invUsed);
-        locationDayInventoryUsed.put(location, dayInvUsed);
+    public void executePath(Demand demand, NextInPath top) {
+        for (NextInPath path = top; null != path.getFromEdge(); path = path.getFromEdge()) {
+            NextInPath to = path.getFromEdge();
+            Integer inventoryDispatched = path.getInventoryCollected() - to.getInventoryCollected();
+            inventoryStore.useInventory(path.getSource(), to.getSource(), path.getLeadTime(), inventoryDispatched);
+            shortestPathStore.addEdgeToShortestPath(demand, path);
+        }
     }
 }

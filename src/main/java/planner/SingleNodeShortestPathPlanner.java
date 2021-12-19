@@ -1,12 +1,11 @@
 package planner;
 
-import java.util.Collection;
 import java.util.TreeSet;
 
 import javax.inject.Inject;
 
 import model.Demand;
-import model.network.Network;
+import network.Network;
 import model.plan.NextInPath;
 
 import lombok.extern.log4j.Log4j2;
@@ -23,24 +22,19 @@ public class SingleNodeShortestPathPlanner extends ResourcePlanner {
      */
     NextInPath getShortestPath(Demand demand, Network network) {
         TreeSet<NextInPath> priorityQueue = new TreeSet<>(NextInPath::compare);
-        Collection<NextInPath> edges = network.get(demand.getLocation());
 
         //Add all edges from to the queue
-        for (NextInPath edge: edges) {
-            int inv = network.getInventoryForDay(edge.getLocation(), demand.getDay()+edge.getLeadTime());
-            priorityQueue.add(nextPath(edge, demand.getDay()+edge.getLeadTime(), inv, null));
-        }
+        for (NextInPath edge: network.get(demand.getLocation()))
+            priorityQueue.add(nextEdgeFromTop(network, demand, null, edge));
 
         while (!priorityQueue.isEmpty()) {
             NextInPath top = priorityQueue.pollFirst();
-            if (top.getInventoryCollected() >= demand.getDemand()) {
+            log.info("Top: [{}]", top);
+            if (top.getInventoryCollected().equals(demand.getDemand()))
                 return top;
-            }
-            edges = network.get(top.getLocation());
-            for (NextInPath edge: edges) {
-                int inv = top.getInventoryCollected() + network.getInventoryForDay(top.getLocation(), top.getCurrentDay()+edge.getLeadTime());
-                priorityQueue.add(nextPath(edge, top.getCurrentDay()+edge.getLeadTime(), inv, top));
-            }
+
+            for (NextInPath edge: network.get(top.getSource()))
+                priorityQueue.add(nextEdgeFromTop(network, demand, top, edge));
         }
         String errorMessage =
                 String.format("No path found to satisfy location: [%s] demand: [%s] for day: [%s]",
@@ -48,14 +42,22 @@ public class SingleNodeShortestPathPlanner extends ResourcePlanner {
         throw new RuntimeException(errorMessage);
     }
 
-    public NextInPath nextPath(NextInPath edge, Integer day, Integer invUsed, NextInPath fromEdge) {
+    public NextInPath nextEdgeFromTop(Network network, Demand demand, NextInPath top, NextInPath edge) {
+        int totalLeadTime = edge.getLeadTime() + (null == top ? 0 : top.getLeadTime());
+        int totalFreightCost = edge.getFreightCost() + (null == top ? 0 : top.getFreightCost());
+
+        int dispatchDay = demand.getDay() - totalLeadTime;
+        int availableInventoryOnDispatchDay = network.getInventoryForDay(edge.getSource(), dispatchDay);
+
+        int totalInventoryCollected = availableInventoryOnDispatchDay + (null == top ? 0 : top.getInventoryCollected());
+        totalInventoryCollected = Integer.min(totalInventoryCollected, demand.getDemand());
+
         return NextInPath.builder()
-                .freightCost(edge.getFreightCost())
-                .leadTime(edge.getLeadTime())
-                .location(edge.getLocation())
-                .currentDay(day)
-                .inventoryCollected(invUsed)
-                .fromEdge(fromEdge)
+                .freightCost(totalFreightCost)
+                .leadTime(totalLeadTime)
+                .inventoryCollected(totalInventoryCollected)
+                .source(edge.getSource())
+                .fromEdge(top)
                 .build();
     }
 }

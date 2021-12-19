@@ -2,12 +2,12 @@ package dagger;
 
 import javax.inject.Singleton;
 
-import executor.DRPExecutor;
+import executor.DRPCollectInputExecutor;
 import executor.DRPGeneratedInputExecutor;
 
 @Singleton
 @Component(modules = {DRPModule.class})
 public interface DRPComponent {
-    void inject(DRPExecutor drpExecutor);
+    void inject(DRPCollectInputExecutor drpCollectInputExecutor);
     void inject(DRPGeneratedInputExecutor drpGeneratedInputExecutor);
 }
