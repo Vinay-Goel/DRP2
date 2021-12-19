@@ -68,7 +68,7 @@ public class Network {
         for (NextInPath path = top; null != path.getFromEdge(); path = path.getFromEdge()) {
             NextInPath to = path.getFromEdge();
             Integer inventoryDispatched = path.getInventoryCollected() - to.getInventoryCollected();
-            inventoryStore.useInventory(path.getSource(), to.getSource(), path.getLeadTime(), inventoryDispatched);
+            inventoryStore.useInventory(path.getSource(), to.getSource(), demand.getDay()-path.getLeadTime(), inventoryDispatched);
             shortestPathStore.addEdgeToShortestPath(demand, path);
         }
     }
